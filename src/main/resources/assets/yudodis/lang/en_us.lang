@@ -1,0 +1,14 @@
+yudodis.config.title=Y U Do Dis Config
+yudodis.config.yfailmessage=Y Fail Message
+yudodis.config.yactionbartoggle=Y Action Bar Toggle
+yudodis.config.biomefailmessage=Biome Fail Message
+yudodis.config.biomeactionbartoggle=Biome Action Bar Toggle
+yudodis.config.itemdimlist=Item + Dim List
+yudodis.config.itembiomelist=Item + Biome List
+yudodis.config.itemdimwhitelistorblacklist=ItemDim Whitelist or Blacklist
+yudodis.config.itembiomewhitelistorblacklist=ItemBiome Whitelist or Blacklist
+yudodis.config.safezone=Safe Zone Toggle
+yudodis.config.safezoneHeight=Safe Zone Height
+yudodis.config.dimBlacklist=Dim Blacklist
+yudodis.config.dimalwaysblocklist=Dim ALWAYS Block List.
+yudodis.config.biomealwaysblocklist=Biome ALWAYS Block List.

@@ -1,0 +1,21 @@
+[
+  {
+    "modid": "Y_U_Do_Dis",
+    "name": "Y_U_Do_Dis",
+    "description": "Blocks placing blocks below a Y level!",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "",
+    "updateUrl": "",
+    "authorList": [
+      "Tibbz",
+      "Claycorp"
+    ],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": [
+      ""
+    ]
+  }
+]
