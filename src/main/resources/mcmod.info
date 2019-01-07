@@ -1,8 +1,8 @@
 [
   {
-    "modid": "Y_U_Do_Dis",
+    "modid": "yudodis",
     "name": "Y_U_Do_Dis",
-    "description": "Blocks placing blocks below a Y level!",
+    "description": "Block item use or block placing based on Y level or Biome!",
     "version": "${version}",
     "mcversion": "${mcversion}",
     "url": "",
@@ -12,10 +12,6 @@
       "Claycorp"
     ],
     "credits": "",
-    "logoFile": "",
-    "screenshots": [],
-    "dependencies": [
-      ""
-    ]
+    "logoFile": ""
   }
 ]

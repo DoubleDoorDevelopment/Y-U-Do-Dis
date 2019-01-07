@@ -2,127 +2,366 @@ package net.doubledoordev;
 
 import java.util.Map;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class EventHandler
 {
-    //TODO: 1/100 chance for tnt sound?
     @SubscribeEvent
     public void placeEvent(BlockEvent.PlaceEvent event)
     {
         EntityPlayer player = event.getPlayer();
-        IBlockState placedBlock = event.getPlacedBlock();
-        String placedBlockName = placedBlock.getBlock().getRegistryName().toString();
+        String placedBlockName = event.getPlacedBlock().getBlock().getRegistryName().toString();
         String biomeName = player.world.getBiome(player.getPosition()).getRegistryName().toString();
-        // Check over the Dim blacklist
-        for (int dim : ModConfig.dimBlacklist)
+        String biomeDisplayName = player.world.getBiome(player.getPosition()).getBiomeName();
+        boolean shouldCancel = false;
+
+        // If the player is above the safe zone we need to start blocking.
+        if (player.posY >= ModConfig.blockSafetyZone.blockSafeZoneHeight)
         {
-            // We break out if dim is on blacklist as we don't want to continue.
-            if (player.dimension == dim)
-                break;
-
-            //
-            for (int alwaysDim : ModConfig.dimAlwaysBlockList)
-            {
-                if (player.dimension == alwaysDim)
-                {
-                    // Check if we are in the safezone because bedrock is bad.
-                    if (ModConfig.safeZone && player.posY <= ModConfig.safeZoneHeight)
-                        break;
-                    // Cancel the placement and give the user feedback.
-                    event.setCanceled(true);
-                    player.sendStatusMessage(new TextComponentString(String.format(ModConfig.yFailMessage, alwaysDim)), ModConfig.yActionbarToggle);
-                }
-            }
-            // If they are in a dim that is blocking check what type of list we have.
-            if (!ModConfig.itemDimWhitelistOrBlacklist)
-            {
-                // Check over the map to block items.
-                for (Map.Entry<String, Integer> entry : ModConfig.itemDimList.entrySet())
-                {
-                    // if the name on the list allow it.
-                    if (player.posY <= entry.getValue() && !placedBlockName.equals(entry.getKey()))
-                    {
-                        // Check if we are in the safezone because bedrock is bad.
-                        if (ModConfig.safeZone && player.posY <= ModConfig.safeZoneHeight)
-                            break;
-                        // Cancel the placement and give the user feedback.
-                        event.setCanceled(true);
-                        player.sendStatusMessage(new TextComponentString(String.format(ModConfig.yFailMessage, entry.getValue())), ModConfig.yActionbarToggle);
-                    }
-                }
-            }
-            else
-            {
-                // Check over the map to allow items.
-                for (Map.Entry<String, Integer> entry : ModConfig.itemDimList.entrySet())
-                {
-                    // if the name on the list block it.
-                    if (player.posY <= entry.getValue() && placedBlockName.equals(entry.getKey()))
-                    {
-                        // Check if we are in the safezone because bedrock is bad.
-                        if (ModConfig.safeZone && player.posY <= ModConfig.safeZoneHeight)
-                            break;
-                        // Cancel the placement and give the user feedback.
-                        event.setCanceled(true);
-                        player.sendStatusMessage(new TextComponentString(String.format(ModConfig.yFailMessage, entry.getValue())), ModConfig.yActionbarToggle);
-                    }
-                }
-            }
-
-            // Check over the Dim blacklist
-            for (String biome : ModConfig.biomeBlacklist)
+            // Y/Dim based blocking start
+            for (int dim : ModConfig.blockSafetyZone.blockDimAlwaysAllowlist)
             {
                 // We break out if dim is on blacklist as we don't want to continue.
-                if (biomeName.equals(biome))
+                if (player.dimension == dim)
+                {
                     break;
+                }
+                // If our dim isn't on blacklist lets check for ban.
+                else
+                {
+                    //Lets check if its an always block list before we do anything else.
+                    for (int alwaysDim : ModConfig.blockDimSettings.blockDimAlwaysBlockList)
+                    {
+                        // if the dim matches an always block block it.
+                        if (player.dimension == alwaysDim)
+                        {
+                            // Cancel the placement and give the user feedback.
+                            event.setCanceled(true);
+                            player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockDimSettings.blockDimFailMessage, alwaysDim)), ModConfig.blockDimSettings.blockDimActionbarToggle);
+                            break;
+                        }
+                    }
+                    // Check over Whitelist map.
+                    for (Map.Entry<String, String[]> entry : ModConfig.blockYSettings.blockYWhiteList.entrySet())
+                    {
+                        // Look for any matching Y entries.
+                        if (player.posY <= Integer.parseInt(entry.getKey()))
+                        {
+                            // If we have one check the array of item strings.
+                            for (String item : entry.getValue())
+                            {
+                                // if our placed item doesn't match one in there block it.
+                                if (!placedBlockName.equals(item))
+                                {
+                                    shouldCancel = false;
+                                }
+                                else
+                                {
+                                    shouldCancel = true;
+                                    break;
+                                }
+                            }
+                            if (shouldCancel)
+                            {
+                                // Cancel the placement and give the user feedback.
+                                event.setCanceled(true);
+                                player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockYSettings.blockYFailMessage, entry.getKey())), ModConfig.blockYSettings.blockYActionbarToggle);
+                            }
+                        }
+                    }
 
-                //
-                for (String alwaysBiome : ModConfig.biomeAlwaysBlockList)
+                    // Check over Blacklist map.
+                    for (Map.Entry<String, Integer> entry : ModConfig.blockYSettings.blockYBlackList.entrySet())
+                    {
+                        // Look for any matching blocks and Y entries.
+                        if (placedBlockName.equals(entry.getKey()) && player.posY <= entry.getValue())
+                        {
+                            // Cancel the placement and give the user feedback.
+                            event.setCanceled(true);
+                            player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockYSettings.blockYFailMessage, entry.getValue())), ModConfig.blockYSettings.blockYActionbarToggle);
+
+                        }
+                    }
+                }
+            }
+
+            // Biome Check Starts here.
+            for (String safeBiome : ModConfig.blockSafetyZone.blockBiomeAlwaysAllowlist)
+            {
+                // Break out of the biomes if it is blacklisted
+                if (biomeName.equals(safeBiome))
+                {
+                    break;
+                }
+                // if biome isn't on blacklist check for ban
+                else
+                {
+                    // Check for ban alls first.
+                    for (String alwaysBiome : ModConfig.blockBiomeSettings.blockBiomeAlwaysBlockList)
+                    {
+                        if (biomeName.equals(alwaysBiome))
+                        {
+                            // Cancel the placement and give the user feedback.
+                            event.setCanceled(true);
+                            player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockBiomeSettings.blockBiomeFailMessage, biomeDisplayName)), ModConfig.blockBiomeSettings.blockBiomeActionbarToggle);
+                            break;
+                        }
+                    }
+
+                    // Check over Whitelist map.
+                    for (Map.Entry<String, String[]> entry : ModConfig.blockBiomeSettings.blockBiomeWhiteList.entrySet())
+                    {
+                        // Look for any matching Y entries.
+                        if (placedBlockName.equals(entry.getKey()))
+                        {
+                            // If we have one check the array of item strings.
+                            for (String whitelistedBiome : entry.getValue())
+                            {
+                                // if our placed item doesn't match one in there block it.
+                                if (biomeName.equals(whitelistedBiome))
+                                {
+                                    shouldCancel = false;
+                                    break;
+                                }
+                                else
+                                {
+                                    shouldCancel = true;
+                                }
+                            }
+                        }
+                    }
+                    if (shouldCancel)
+                    {
+                        // Cancel the placement and give the user feedback.
+                        event.setCanceled(true);
+                        player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockBiomeSettings.blockBiomeFailMessage, biomeDisplayName)), ModConfig.blockBiomeSettings.blockBiomeActionbarToggle);
+                    }
+
+                    for (Map.Entry<String, String[]> entry : ModConfig.blockBiomeSettings.blockBiomeBlackList.entrySet())
+                    {
+                        // Look for any matching Y entries.
+                        if (placedBlockName.equals(entry.getKey()))
+                        {
+                            // If we have one check the array of item strings.
+                            for (String blacklistedBiome : entry.getValue())
+                            {
+                                // if our placed item doesn't match one in there block it.
+                                if (biomeName.equals(blacklistedBiome))
+                                {
+                                    shouldCancel = true;
+                                    break;
+                                }
+                                else
+                                {
+                                    shouldCancel = false;
+                                }
+                            }
+                        }
+                    }
+                    if (shouldCancel)
+                    {
+                        // Cancel the placement and give the user feedback.
+                        event.setCanceled(true);
+                        player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockBiomeSettings.blockBiomeFailMessage, biomeDisplayName)), ModConfig.blockBiomeSettings.blockBiomeActionbarToggle);
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void placeEvent(PlayerInteractEvent.RightClickBlock event)
+    {
+        checkItems(event);
+    }
+
+    @SubscribeEvent
+    public void placeEvent(PlayerInteractEvent.RightClickItem event)
+    {
+        checkItems(event);
+    }
+
+    public void checkItems(PlayerInteractEvent event)
+    {
+        EntityLivingBase entity = event.getEntityLiving();
+        String itemUsed = event.getItemStack().getItem().getRegistryName().toString();
+        String biomeName = entity.world.getBiome(entity.getPosition()).getRegistryName().toString();
+        String biomeDisplayName = entity.world.getBiome(entity.getPosition()).getBiomeName();
+        boolean shouldCancel = false;
+
+        // If the player is above the safe zone we need to start blocking.
+        if (entity.posY >= ModConfig.itemSafetyZone.itemSafeZoneHeight)
+        {
+            // Dim based blocking start
+            for (int dim : ModConfig.itemSafetyZone.itemDimAlwaysAllowdlist)
+            {
+                // We break out if dim is on blacklist as we don't want to continue.
+                if (entity.dimension == dim)
+                {
+                    break;
+                }
+                // If our dim isn't on blacklist lets check for ban.
+                else
+                {
+                    //Lets check if its an always block list before we do anything else.
+                    for (int alwaysDim : ModConfig.itemDimSettings.itemDimAlwaysBlockList)
+                    {
+                        // if the dim matches an always block block it.
+                        if (entity.dimension == alwaysDim)
+                        {
+                            // Cancel the placement and give the user feedback.
+                            event.setCanceled(true);
+                            if (entity instanceof EntityPlayer)
+                                ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemDimSettings.itemDimFailMessage, alwaysDim)), ModConfig.itemDimSettings.itemDimActionbarToggle);
+                        }
+                    }
+
+                    // Check over Whitelist map.
+                    for (Map.Entry<String, String[]> entry : ModConfig.itemYSettings.itemYWhiteList.entrySet())
+                    {
+                        // Look for any matching Y entries.
+                        if (entity.posY <= Integer.valueOf(entry.getKey()))
+                        {
+                            // If we have one check the array of item strings.
+                            for (String item : entry.getValue())
+                            {
+                                // if our placed item doesn't match one in there block it.
+                                if (!itemUsed.equals(item))
+                                {
+                                    shouldCancel = false;
+                                }
+                                else
+                                {
+                                    shouldCancel = true;
+                                    break;
+                                }
+                            }
+                            if (shouldCancel)
+                            {
+                                // Cancel the placement and give the user feedback.
+                                event.setCanceled(true);
+                                if (entity instanceof EntityPlayer)
+                                    ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemYSettings.itemYFailMessage, entry.getKey())), ModConfig.itemYSettings.itemYActionbarToggle);
+                            }
+                        }
+                    }
+
+                    // Check over Whitelist map.
+                    for (Map.Entry<String, String[]> entry : ModConfig.itemYSettings.itemYBlackList.entrySet())
+                    {
+                        // Look for any matching Y entries.
+                        if (entity.posY <= Integer.valueOf(entry.getKey()))
+                        {
+                            // If we have one check the array of item strings.
+                            for (String item : entry.getValue())
+                            {
+                                // if our placed item doesn't match one in there block it.
+                                if (!itemUsed.equals(item))
+                                {
+                                    shouldCancel = false;
+                                }
+                                else
+                                {
+                                    shouldCancel = true;
+                                    break;
+                                }
+                            }
+                            if (shouldCancel)
+                            {
+                                // Cancel the placement and give the user feedback.
+                                event.setCanceled(true);
+                                if (entity instanceof EntityPlayer)
+                                    ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemYSettings.itemYFailMessage, entry.getKey())), ModConfig.itemYSettings.itemYActionbarToggle);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Biome Check Starts here.
+        for (String biome : ModConfig.itemSafetyZone.itemBiomeAlwaysAllowedList)
+        {
+            // Break out of the biomes if it is blacklisted
+            if (biomeName.equals(biome))
+            {
+                break;
+            }
+            // if biome isn't on blacklist check for ban
+            else
+            {
+                // Check for ban alls first.
+                for (String alwaysBiome : ModConfig.itemBiomeSettings.itemBiomeAlwaysBlockList)
                 {
                     if (biomeName.equals(alwaysBiome))
                     {
-                        // Check if we are in the safezone because bedrock is bad.
-                        if (ModConfig.safeZone && player.posY <= ModConfig.safeZoneHeight)
-                            break;
                         // Cancel the placement and give the user feedback.
                         event.setCanceled(true);
-                        player.sendStatusMessage(new TextComponentString(String.format(ModConfig.yFailMessage, alwaysBiome)), ModConfig.yActionbarToggle);
+                        if (entity instanceof EntityPlayer)
+                            ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemBiomeSettings.itemBiomeFailMessage, biomeDisplayName)), ModConfig.itemBiomeSettings.itemBiomeActionbarToggle);
                     }
                 }
-                // check over item/biome map
-                for (Map.Entry<String, String> entry : ModConfig.itemBiomeList.entrySet())
-                {
 
-                    // check the whitelist/blacklist
-                    if (ModConfig.itemBiomeWhitelistOrBlacklist)
+                // Check over Whitelist map.
+                for (Map.Entry<String, String[]> entry : ModConfig.blockBiomeSettings.blockBiomeWhiteList.entrySet())
+                {
+                    // Look for any matching Y entries.
+                    if (biomeName.equals(entry.getKey()))
                     {
-                        // if the current biome the player is in matches as a whitelist (allows the item)
-                        if (entry.getValue().equals(biomeName))
+                        // If we have one check the array of item strings.
+                        for (String whitelistedBiome : entry.getValue())
                         {
-                            // Check if we are in the safezone because bedrock is bad.
-                            if (ModConfig.safeZone && player.posY <= ModConfig.safeZoneHeight)
+                            // if our placed item doesn't match one in there block it.
+                            if (biomeName.equals(whitelistedBiome))
+                            {
+                                shouldCancel = false;
                                 break;
+                            }
+                            else
+                            {
+                                shouldCancel = true;
+                            }
+                        }
+                        if (shouldCancel)
+                        {
                             // Cancel the placement and give the user feedback.
                             event.setCanceled(true);
-                            player.sendStatusMessage(new TextComponentString(String.format(ModConfig.biomeFailMessage, entry.getValue())), ModConfig.biomeActionbarToggle);
+                            if (entity instanceof EntityPlayer)
+                                ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemBiomeSettings.itemBiomeFailMessage, entry.getKey())), ModConfig.itemBiomeSettings.itemBiomeActionbarToggle);
                         }
                     }
-                    else
+                }
+
+                for (Map.Entry<String, String[]> entry : ModConfig.blockBiomeSettings.blockBiomeBlackList.entrySet())
+                {
+                    // Look for any matching Y entries.
+                    if (itemUsed.equals(entry.getKey()))
                     {
-                        // if the current biome the player is in matches as a blacklist (blocks the item)
-                        if (!entry.getValue().equals(biomeName))
+                        // If we have one check the array of item strings.
+                        for (String blacklistedBiome : entry.getValue())
                         {
-                            // Check if we are in the safezone because bedrock is bad.
-                            if (ModConfig.safeZone && player.posY <= ModConfig.safeZoneHeight)
+                            // if our placed item doesn't match one in there block it.
+                            if (biomeName.equals(blacklistedBiome))
+                            {
+                                shouldCancel = true;
                                 break;
+                            }
+                            else
+                            {
+                                shouldCancel = false;
+                            }
+                        }
+                        if (shouldCancel)
+                        {
                             // Cancel the placement and give the user feedback.
                             event.setCanceled(true);
-                            player.sendStatusMessage(new TextComponentString(String.format(ModConfig.biomeFailMessage, entry.getValue())), ModConfig.biomeActionbarToggle);
+                            if (entity instanceof EntityPlayer)
+                                ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemBiomeSettings.itemBiomeFailMessage, entry.getKey())), ModConfig.itemBiomeSettings.itemBiomeActionbarToggle);
                         }
                     }
                 }
