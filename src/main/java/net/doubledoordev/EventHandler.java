@@ -126,11 +126,11 @@ public class EventHandler
                                 if (biomeName.equals(whitelistedBiome))
                                 {
                                     shouldCancel = false;
-                                    break;
                                 }
                                 else
                                 {
                                     shouldCancel = true;
+                                    break;
                                 }
                             }
                         }
@@ -231,14 +231,14 @@ public class EventHandler
                             for (String item : entry.getValue())
                             {
                                 // if our placed item doesn't match one in there block it.
-                                if (!itemUsed.equals(item))
+                                if (itemUsed.equals(item))
                                 {
                                     shouldCancel = false;
+                                    break;
                                 }
                                 else
                                 {
                                     shouldCancel = true;
-                                    break;
                                 }
                             }
                             if (shouldCancel)
@@ -264,11 +264,11 @@ public class EventHandler
                                 if (!itemUsed.equals(item))
                                 {
                                     shouldCancel = false;
+                                    break;
                                 }
                                 else
                                 {
                                     shouldCancel = true;
-                                    break;
                                 }
                             }
                             if (shouldCancel)
