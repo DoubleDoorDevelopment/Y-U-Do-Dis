@@ -1,5 +1,6 @@
 package net.doubledoordev;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import net.minecraft.entity.EntityLivingBase;
@@ -47,16 +48,16 @@ public class EventHandler
                         }
                     }
                     // Check over Whitelist map.
-                    for (Map.Entry<String, String[]> entry : ModConfig.blockYSettings.blockYWhiteList.entrySet())
+                    for (Map.Entry<String, ArrayList<String>> entry : YUDoDis.INSTANCE.blockYWhiteListMap.entrySet())
                     {
                         // Look for any matching Y entries.
-                        if (player.posY <= Integer.parseInt(entry.getKey()))
+                        if (player.posY <= Integer.valueOf(entry.getKey()))
                         {
                             // If we have one check the array of item strings.
                             for (String item : entry.getValue())
                             {
                                 // if our placed item doesn't match one in there block it.
-                                if (!placedBlockName.equals(item))
+                                if (placedBlockName.equals(item))
                                 {
                                     shouldCancel = false;
                                 }
@@ -72,102 +73,122 @@ public class EventHandler
                                 event.setCanceled(true);
                                 player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockYSettings.blockYFailMessage, entry.getKey())), ModConfig.blockYSettings.blockYActionbarToggle);
                             }
+                            shouldCancel = false;
                         }
                     }
 
                     // Check over Blacklist map.
-                    for (Map.Entry<String, Integer> entry : ModConfig.blockYSettings.blockYBlackList.entrySet())
+                    for (Map.Entry<String, ArrayList<String>> entry : YUDoDis.INSTANCE.blockYBlackListMap.entrySet())
                     {
                         // Look for any matching blocks and Y entries.
-                        if (placedBlockName.equals(entry.getKey()) && player.posY <= entry.getValue())
+                        if (player.posY <= Integer.valueOf(entry.getKey()))
                         {
-                            // Cancel the placement and give the user feedback.
-                            event.setCanceled(true);
-                            player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockYSettings.blockYFailMessage, entry.getValue())), ModConfig.blockYSettings.blockYActionbarToggle);
-
+                            // If we have one check the array of item strings.
+                            for (String item : entry.getValue())
+                            {
+                                // if our placed item doesn't match one in there block it.
+                                if (placedBlockName.equals(item))
+                                {
+                                    shouldCancel = false;
+                                }
+                                else
+                                {
+                                    shouldCancel = true;
+                                    break;
+                                }
+                            }
+                            if (shouldCancel)
+                            {
+                                // Cancel the placement and give the user feedback.
+                                event.setCanceled(true);
+                                player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockYSettings.blockYFailMessage, entry.getKey())), ModConfig.blockYSettings.blockYActionbarToggle);
+                            }
+                            shouldCancel = false;
                         }
                     }
                 }
-            }
 
-            // Biome Check Starts here.
-            for (String safeBiome : ModConfig.blockSafetyZone.blockBiomeAlwaysAllowlist)
-            {
-                // Break out of the biomes if it is blacklisted
-                if (biomeName.equals(safeBiome))
+                // Biome Check Starts here.
+                for (String safeBiome : ModConfig.blockSafetyZone.blockBiomeAlwaysAllowlist)
                 {
-                    break;
-                }
-                // if biome isn't on blacklist check for ban
-                else
-                {
-                    // Check for ban alls first.
-                    for (String alwaysBiome : ModConfig.blockBiomeSettings.blockBiomeAlwaysBlockList)
+                    // Break out of the biomes if it is blacklisted
+                    if (biomeName.equals(safeBiome))
                     {
-                        if (biomeName.equals(alwaysBiome))
+                        break;
+                    }
+                    // if biome isn't on blacklist check for ban
+                    else
+                    {
+                        // Check for ban alls first.
+                        for (String alwaysBiome : ModConfig.blockBiomeSettings.blockBiomeAlwaysBlockList)
+                        {
+                            if (biomeName.equals(alwaysBiome))
+                            {
+                                // Cancel the placement and give the user feedback.
+                                event.setCanceled(true);
+                                player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockBiomeSettings.blockBiomeFailMessage, biomeDisplayName)), ModConfig.blockBiomeSettings.blockBiomeActionbarToggle);
+                                break;
+                            }
+                        }
+
+                        // Check over Whitelist map.
+                        for (Map.Entry<String, ArrayList<String>> entry : YUDoDis.INSTANCE.blockBiomeWhiteListMap.entrySet())
+                        {
+                            // Look for any matching biome entries.
+                            if (placedBlockName.equals(entry.getKey()))
+                            {
+                                // If we have one check the array of item strings.
+                                for (String whitelistedBiome : entry.getValue())
+                                {
+                                    // if our placed item doesn't match one in there block it.
+                                    if (biomeName.equals(whitelistedBiome))
+                                    {
+                                        shouldCancel = false;
+                                    }
+                                    else
+                                    {
+                                        shouldCancel = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (shouldCancel)
                         {
                             // Cancel the placement and give the user feedback.
                             event.setCanceled(true);
                             player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockBiomeSettings.blockBiomeFailMessage, biomeDisplayName)), ModConfig.blockBiomeSettings.blockBiomeActionbarToggle);
-                            break;
                         }
-                    }
+                        shouldCancel = false;
 
-                    // Check over Whitelist map.
-                    for (Map.Entry<String, String[]> entry : ModConfig.blockBiomeSettings.blockBiomeWhiteList.entrySet())
-                    {
-                        // Look for any matching Y entries.
-                        if (placedBlockName.equals(entry.getKey()))
+                        for (Map.Entry<String, ArrayList<String>> entry : YUDoDis.INSTANCE.blockBiomeBlackListMap.entrySet())
                         {
-                            // If we have one check the array of item strings.
-                            for (String whitelistedBiome : entry.getValue())
+                            // Look for any matching Y entries.
+                            if (placedBlockName.equals(entry.getKey()))
                             {
-                                // if our placed item doesn't match one in there block it.
-                                if (biomeName.equals(whitelistedBiome))
+                                // If we have one check the array of item strings.
+                                for (String blacklistedBiome : entry.getValue())
                                 {
-                                    shouldCancel = false;
-                                }
-                                else
-                                {
-                                    shouldCancel = true;
-                                    break;
+                                    // if our placed item doesn't match one in there block it.
+                                    if (biomeName.equals(blacklistedBiome))
+                                    {
+                                        shouldCancel = true;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        shouldCancel = false;
+                                    }
                                 }
                             }
                         }
-                    }
-                    if (shouldCancel)
-                    {
-                        // Cancel the placement and give the user feedback.
-                        event.setCanceled(true);
-                        player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockBiomeSettings.blockBiomeFailMessage, biomeDisplayName)), ModConfig.blockBiomeSettings.blockBiomeActionbarToggle);
-                    }
-
-                    for (Map.Entry<String, String[]> entry : ModConfig.blockBiomeSettings.blockBiomeBlackList.entrySet())
-                    {
-                        // Look for any matching Y entries.
-                        if (placedBlockName.equals(entry.getKey()))
+                        if (shouldCancel)
                         {
-                            // If we have one check the array of item strings.
-                            for (String blacklistedBiome : entry.getValue())
-                            {
-                                // if our placed item doesn't match one in there block it.
-                                if (biomeName.equals(blacklistedBiome))
-                                {
-                                    shouldCancel = true;
-                                    break;
-                                }
-                                else
-                                {
-                                    shouldCancel = false;
-                                }
-                            }
+                            // Cancel the placement and give the user feedback.
+                            event.setCanceled(true);
+                            player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockBiomeSettings.blockBiomeFailMessage, biomeDisplayName)), ModConfig.blockBiomeSettings.blockBiomeActionbarToggle);
                         }
-                    }
-                    if (shouldCancel)
-                    {
-                        // Cancel the placement and give the user feedback.
-                        event.setCanceled(true);
-                        player.sendStatusMessage(new TextComponentString(String.format(ModConfig.blockBiomeSettings.blockBiomeFailMessage, biomeDisplayName)), ModConfig.blockBiomeSettings.blockBiomeActionbarToggle);
+                        shouldCancel = false;
                     }
                 }
             }
@@ -222,7 +243,7 @@ public class EventHandler
                     }
 
                     // Check over Whitelist map.
-                    for (Map.Entry<String, String[]> entry : ModConfig.itemYSettings.itemYWhiteList.entrySet())
+                    for (Map.Entry<String, ArrayList<String>> entry : YUDoDis.INSTANCE.itemYWhiteListMap.entrySet())
                     {
                         // Look for any matching Y entries.
                         if (entity.posY <= Integer.valueOf(entry.getKey()))
@@ -248,11 +269,12 @@ public class EventHandler
                                 if (entity instanceof EntityPlayer)
                                     ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemYSettings.itemYFailMessage, entry.getKey())), ModConfig.itemYSettings.itemYActionbarToggle);
                             }
+                            shouldCancel = false;
                         }
                     }
 
                     // Check over Whitelist map.
-                    for (Map.Entry<String, String[]> entry : ModConfig.itemYSettings.itemYBlackList.entrySet())
+                    for (Map.Entry<String, ArrayList<String>> entry : YUDoDis.INSTANCE.itemYBlackListMap.entrySet())
                     {
                         // Look for any matching Y entries.
                         if (entity.posY <= Integer.valueOf(entry.getKey()))
@@ -261,14 +283,14 @@ public class EventHandler
                             for (String item : entry.getValue())
                             {
                                 // if our placed item doesn't match one in there block it.
-                                if (!itemUsed.equals(item))
+                                if (itemUsed.equals(item))
                                 {
-                                    shouldCancel = false;
+                                    shouldCancel = true;
                                     break;
                                 }
                                 else
                                 {
-                                    shouldCancel = true;
+                                    shouldCancel = false;
                                 }
                             }
                             if (shouldCancel)
@@ -278,6 +300,7 @@ public class EventHandler
                                 if (entity instanceof EntityPlayer)
                                     ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemYSettings.itemYFailMessage, entry.getKey())), ModConfig.itemYSettings.itemYActionbarToggle);
                             }
+                            shouldCancel = false;
                         }
                     }
                 }
@@ -308,7 +331,7 @@ public class EventHandler
                 }
 
                 // Check over Whitelist map.
-                for (Map.Entry<String, String[]> entry : ModConfig.blockBiomeSettings.blockBiomeWhiteList.entrySet())
+                for (Map.Entry<String, ArrayList<String>> entry : YUDoDis.INSTANCE.itemBiomeWhiteListMap.entrySet())
                 {
                     // Look for any matching Y entries.
                     if (biomeName.equals(entry.getKey()))
@@ -334,10 +357,11 @@ public class EventHandler
                             if (entity instanceof EntityPlayer)
                                 ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemBiomeSettings.itemBiomeFailMessage, entry.getKey())), ModConfig.itemBiomeSettings.itemBiomeActionbarToggle);
                         }
+                        shouldCancel = false;
                     }
                 }
 
-                for (Map.Entry<String, String[]> entry : ModConfig.blockBiomeSettings.blockBiomeBlackList.entrySet())
+                for (Map.Entry<String, ArrayList<String>> entry : YUDoDis.INSTANCE.itemBiomeBlackListMap.entrySet())
                 {
                     // Look for any matching Y entries.
                     if (itemUsed.equals(entry.getKey()))
@@ -363,6 +387,7 @@ public class EventHandler
                             if (entity instanceof EntityPlayer)
                                 ((EntityPlayer) entity).sendStatusMessage(new TextComponentString(String.format(ModConfig.itemBiomeSettings.itemBiomeFailMessage, entry.getKey())), ModConfig.itemBiomeSettings.itemBiomeActionbarToggle);
                         }
+                        shouldCancel = false;
                     }
                 }
             }

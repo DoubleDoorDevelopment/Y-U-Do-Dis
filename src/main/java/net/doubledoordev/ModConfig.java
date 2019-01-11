@@ -1,9 +1,9 @@
 package net.doubledoordev;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.regex.Pattern;
 
 import net.minecraftforge.common.config.Config;
+import net.minecraftforge.common.config.Config.Type;
 import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -16,6 +16,8 @@ import static net.doubledoordev.YUDoDis.MOD_ID;
 @Config.LangKey("yudodis.config.title")
 public class ModConfig
 {
+    private static Pattern splitter = Pattern.compile("\\b([A-Za-z0-9:._\\s]+)");
+
     @Config.Name("Block Safety Zone Configs")
     @Config.Comment("Contains Safety Zones based on Dim, Y or Biome for block placement.")
     public static final BlockSafetyZone blockSafetyZone = new BlockSafetyZone();
@@ -53,7 +55,7 @@ public class ModConfig
     {
         if (event.getModID().equals(MOD_ID))
         {
-            ConfigManager.sync(MOD_ID, Config.Type.INSTANCE);
+            ConfigManager.sync(MOD_ID, Type.INSTANCE);
         }
     }
 
@@ -93,27 +95,22 @@ public class ModConfig
         @Config.LangKey("yudodis.config.block.ywhitelist")
         @Config.Comment({
                 "Block Item names + Y level pairs",
-                "These blocks are the only placeable blocks at or below the given Y)"
+                "These blocks are the only placeable blocks at or below the given Y)",
+                "Format: Y,item,item,item etc",
+                "Example: 40,minecraft:torch"
         })
-        public Map<String, String[]> blockYWhiteList = new HashMap<>();
-
-        {
-            String[] array = new String[1];
-            array[0] = "minecraft:torch";
-            blockYWhiteList.put("40", array);
-        }
+        public String[] blockYWhiteList = new String[0];
 
         @Config.Name("Y Blacklist")
         @Config.LangKey("yudodis.config.block.yblacklist")
         @Config.Comment({
                 "Block Item names + Y level pairs",
                 "These blocks are not placeable at or below the given Y",
+                "Format: Y,item,item,item etc",
+                "Example: 40,minecraft:torch"
         })
-        public Map<String, Integer> blockYBlackList = new HashMap<>();
 
-        {
-            blockYBlackList.put("minecraft:stone", 40);
-        }
+        public String[] blockYBlackList = new String[0];
 
         @Config.Name("Y Fail Message")
         @Config.LangKey("yudodis.config.block.yfailmessage")
@@ -132,29 +129,21 @@ public class ModConfig
         @Config.LangKey("yudodis.config.block.biomewhitelist")
         @Config.Comment({
                 "Block Item name + Biome level pairs",
-                "These blocks are the only ones placeable in the given biomes"
+                "These blocks are the only ones placeable in the given biomes",
+                "Format: item,biome,biome,biome etc",
+                "Example: minecraft:planks,minecraft:taiga_hills"
         })
-        public Map<String, String[]> blockBiomeWhiteList = new HashMap<>();
-
-        {
-            String[] array = new String[1];
-            array[0] = "minecraft:taiga_hills";
-            blockBiomeWhiteList.put("minecraft:torch", array);
-        }
+        public String[] blockBiomeWhiteList = new String[0];
 
         @Config.Name("Biome Blacklist")
         @Config.LangKey("yudodis.config.block.biomeblacklist")
         @Config.Comment({
                 "Block Item name + Biome level pairs",
                 "These blocks are not placeable in the given biomes",
+                "Format: item,biome,biome,biome etc",
+                "Example: minecraft:planks,minecraft:taiga_hills"
         })
-        public Map<String, String[]> blockBiomeBlackList = new HashMap<>();
-
-        {
-            String[] array = new String[1];
-            array[0] = "minecraft:taiga_hills";
-            blockBiomeWhiteList.put("minecraft:planks", array);
-        }
+        public String[] blockBiomeBlackList = new String[0];
 
         @Config.Name("Always Blocked Biomes")
         @Config.LangKey("yudodis.config.block.biomealwaysblocklist")
@@ -211,29 +200,22 @@ public class ModConfig
         @Config.Comment({
                 "Block Item names + Y level pairs",
                 "These blocks/items are the only placeable/usable block/items at or below the given Y",
-                "Using this will block item use and block placement! NOT RECOMMENDED TO USE THIS! Use Blacklist instead!"
+                "Using this will block item use and block placement! NOT RECOMMENDED TO USE THIS! Use Blacklist instead!",
+                "Format: Y,item,item,item etc",
+                "Example: 40,minecraft:bucket"
         })
-        public Map<String, String[]> itemYWhiteList = new HashMap<>();
-
-        {
-            String[] array = new String[0];
-            itemYWhiteList.put("40", array);
-        }
+        public String[] itemYWhiteList = new String[0];
 
         @Config.Name("Y Blacklist")
         @Config.LangKey("yudodis.config.item.yblacklist")
         @Config.Comment({
                 "Block Item names + Y level pairs",
                 "These blocks/items are not placeable/usable at or below the given Y",
-                "You can place blocks or items here."
+                "You can place blocks or items here.",
+                "Format: Y,item,item,item etc",
+                "Example: 40,minecraft:bucket"
         })
-        public Map<String, String[]> itemYBlackList = new HashMap<>();
-
-        {
-            String[] array = new String[1];
-            array[0] = "minecraft:torch";
-            itemYWhiteList.put("40", array);
-        }
+        public String[] itemYBlackList = new String[0];
 
         @Config.Name("Fail Message")
         @Config.LangKey("yudodis.config.item.yfailmessage")
@@ -252,29 +234,21 @@ public class ModConfig
         @Config.LangKey("yudodis.config.item.biomewhitelist")
         @Config.Comment({
                 "Item names + Biome pairs",
-                "These items are the only ones useable in the given biomes"
+                "These items are the only ones useable in the given biomes",
+                "Format: item,biome,biome,biome etc",
+                "Example: minecraft:bucket,minecraft:taiga_hills"
         })
-        public Map<String, String[]> itemBiomeWhiteList = new HashMap<>();
-
-        {
-            String[] array = new String[1];
-            array[0] = "minecraft:taiga_hills";
-            itemBiomeWhiteList.put("minecraft:torch", array);
-        }
+        public String[] itemBiomeWhiteList = new String[0];
 
         @Config.Name("Biome Blacklist")
         @Config.LangKey("yudodis.config.item.biomeblacklist")
         @Config.Comment({
                 "Item names + Biome pairs",
                 "These items are not useable in the given biomes",
+                "Format: item,biome,biome,biome etc",
+                "Example: minecraft:bucket,minecraft:taiga_hills"
         })
-        public Map<String, String[]> itemBiomeBlackList = new HashMap<>();
-
-        {
-            String[] array = new String[1];
-            array[0] = "minecraft:taiga_hills";
-            itemBiomeBlackList.put("minecraft:planks", array);
-        }
+        public String[] itemBiomeBlackList = new String[0];
 
         @Config.Name("Always Blocked Biomes")
         @Config.LangKey("yudodis.config.item.biomealwaysblocklist")
