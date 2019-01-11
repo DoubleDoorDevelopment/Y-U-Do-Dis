@@ -20,7 +20,7 @@ public class YUDoDis
 
     public static final String MOD_ID = "yudodis";
     public static final String MOD_NAME = "Y_U_Do_Dis";
-    public static final String VERSION = "2.0.1";
+    public static final String VERSION = "2.0.2";
     private static Pattern splitter = Pattern.compile("\\b([A-Za-z0-9:._\\s]+)");
     Map<String, ArrayList<String>> blockYWhiteListMap = new HashMap<>();
     Map<String, ArrayList<String>> blockYBlackListMap = new HashMap<>();
